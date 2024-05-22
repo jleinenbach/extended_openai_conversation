@@ -141,6 +141,7 @@ async def validate_authentication(
 ) -> None:
     """
     Validate the authentication with OpenAI or Azure.
+    
     Parameters:
     hass (HomeAssistant): The Home Assistant instance.
     api_key (str): The API key for OpenAI or Azure.
@@ -148,6 +149,7 @@ async def validate_authentication(
     api_version (str): The API version to use.
     organization (str): The organization ID for the API (optional).
     skip_authentication (bool): If True, skip the authentication check.
+    
     Returns:
     None
     """
@@ -182,7 +184,6 @@ class FunctionExecutor(ABC):
     def __init__(self, data_schema=vol.Schema({})) -> None:
         """initialize function executor"""
         self.data_schema = data_schema.extend({vol.Required("type"): str})
-
     
     def to_arguments(self, arguments):
         """to_arguments function"""
@@ -194,7 +195,6 @@ class FunctionExecutor(ABC):
                 None,
             )
             raise InvalidFunction(function_type) from e
-
     
     def validate_entity_ids(self, hass: HomeAssistant, entity_ids, exposed_entities):
         if any(hass.states.get(entity_id) is None for entity_id in entity_ids):
@@ -424,7 +424,6 @@ class NativeFunctionExecutor(FunctionExecutor):
             arguments.get("units"),
             arguments.get("types", {"change"}),
         )
-
     
     def as_utc(self, value: str, default_value, parse_error_message: str):
         if value is None:
@@ -494,6 +493,7 @@ class TemplateFunctionExecutor(FunctionExecutor):
             arguments,
             parse_result=function.get("parse_result", False),
         )
+
 
 class RestFunctionExecutor(FunctionExecutor):
     def __init__(self) -> None:
@@ -580,7 +580,6 @@ class ScrapeFunctionExecutor(FunctionExecutor):
 
         return result
 
-    
     def _async_update_from_rest_data(
         self,
         data: BeautifulSoup,
@@ -749,6 +748,7 @@ class SqliteFunctionExecutor(FunctionExecutor):
             for row in rows:
                 result.append({name: val for name, val in zip(names, row)})
             return result
+
 
 FUNCTION_EXECUTORS: dict[str, FunctionExecutor] = {
     "native": NativeFunctionExecutor(),
