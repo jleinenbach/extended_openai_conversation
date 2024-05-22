@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 import voluptuous as vol
 import yaml
+import asyncio
 
 from homeassistant.components import (
     automation,
@@ -55,6 +56,7 @@ from .exceptions import (
 
 _LOGGER = logging.getLogger(__name__)
 
+
 AZURE_DOMAIN_PATTERN = r"\.openai\.azure\.com"
 
 def is_exposed(entity_id, exposed_entities) -> bool:
@@ -63,16 +65,19 @@ def is_exposed(entity_id, exposed_entities) -> bool:
         for exposed_entity in exposed_entities
     )
 
+
 def get_function_executor(value: str):
     function_executor = FUNCTION_EXECUTORS.get(value)
     if function_executor is None:
         raise FunctionNotFound(value)
     return function_executor
 
+
 def is_azure(base_url: str):
     if base_url and re.search(AZURE_DOMAIN_PATTERN, base_url):
         return True
     return False
+
 
 def convert_to_template(
     settings,
@@ -80,6 +85,7 @@ def convert_to_template(
     hass: HomeAssistant | None = None,
 ):
     _convert_to_template(settings, template_keys, hass, [])
+
 
 def _convert_to_template(settings, template_keys, hass, parents: list[str]):
     if isinstance(settings, dict):
@@ -100,6 +106,7 @@ def _convert_to_template(settings, template_keys, hass, parents: list[str]):
     if isinstance(settings, list):
         for setting in settings:
             _convert_to_template(setting, template_keys, hass, parents)
+
 
 def _get_rest_data(hass, rest_config, arguments):
     rest_config.setdefault(CONF_METHOD, rest.const.DEFAULT_METHOD)
@@ -123,6 +130,7 @@ def _get_rest_data(hass, rest_config, arguments):
 
     return rest.create_rest_data_from_config(hass, rest_config)
 
+
 async def validate_authentication(
     hass: HomeAssistant,
     api_key: str,
@@ -131,9 +139,23 @@ async def validate_authentication(
     organization: str = None,
     skip_authentication=False,
 ) -> None:
+    """
+    Validate the authentication with OpenAI or Azure.
+    Parameters:
+    hass (HomeAssistant): The Home Assistant instance.
+    api_key (str): The API key for OpenAI or Azure.
+    base_url (str): The base URL for the API.
+    api_version (str): The API version to use.
+    organization (str): The organization ID for the API (optional).
+    skip_authentication (bool): If True, skip the authentication check.
+    Returns:
+    None
+    """
+    # If skip_authentication is True, return immediately
     if skip_authentication:
         return
 
+    # Determine if the base URL is for Azure or OpenAI and create the appropriate client
     if is_azure(base_url):
         client = AsyncAzureOpenAI(
             api_key=api_key,
@@ -146,13 +168,22 @@ async def validate_authentication(
             api_key=api_key, base_url=base_url, organization=organization
         )
 
-    await client.models.list(timeout=10)
+    
+    # Define an asynchronous function that lists models with a timeout using asyncio.to_thread
+    async def list_models_with_timeout():
+        # Use asyncio.to_thread to run the blocking call in a separate thread
+        return await asyncio.to_thread(client.models.list, timeout=10)
+
+    # Await the execution of the list_models_with_timeout function
+    await list_models_with_timeout()
+
 
 class FunctionExecutor(ABC):
     def __init__(self, data_schema=vol.Schema({})) -> None:
         """initialize function executor"""
         self.data_schema = data_schema.extend({vol.Required("type"): str})
 
+    
     def to_arguments(self, arguments):
         """to_arguments function"""
         try:
@@ -164,6 +195,7 @@ class FunctionExecutor(ABC):
             )
             raise InvalidFunction(function_type) from e
 
+    
     def validate_entity_ids(self, hass: HomeAssistant, entity_ids, exposed_entities):
         if any(hass.states.get(entity_id) is None for entity_id in entity_ids):
             raise EntityNotFound(entity_ids)
@@ -181,6 +213,7 @@ class FunctionExecutor(ABC):
         exposed_entities,
     ):
         """execute function"""
+
 
 class NativeFunctionExecutor(FunctionExecutor):
     def __init__(self) -> None:
@@ -392,6 +425,7 @@ class NativeFunctionExecutor(FunctionExecutor):
             arguments.get("types", {"change"}),
         )
 
+    
     def as_utc(self, value: str, default_value, parse_error_message: str):
         if value is None:
             return default_value
@@ -406,6 +440,7 @@ class NativeFunctionExecutor(FunctionExecutor):
         if isinstance(state, State):
             return state.as_dict()
         return state
+
 
 class ScriptFunctionExecutor(FunctionExecutor):
     def __init__(self) -> None:
@@ -545,6 +580,7 @@ class ScrapeFunctionExecutor(FunctionExecutor):
 
         return result
 
+    
     def _async_update_from_rest_data(
         self,
         data: BeautifulSoup,
