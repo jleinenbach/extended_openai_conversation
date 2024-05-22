@@ -456,6 +456,7 @@ class ScriptFunctionExecutor(FunctionExecutor):
         script_context = {
             "is_exposed": lambda e: is_exposed(e, exposed_entities),
         }
+        run_variables = {**arguments, **script_context}
         script = Script(
             hass,
             function["sequence"],
@@ -466,7 +467,7 @@ class ScriptFunctionExecutor(FunctionExecutor):
         )
 
         result = await script.async_run(
-            run_variables={**arguments, **script_context}, context=user_input.context
+            run_variables=run_variables, context=user_input.context
         )
         return result.variables.get("_function_result", "Success")
 
@@ -494,10 +495,10 @@ class TemplateFunctionExecutor(FunctionExecutor):
         template_context = {
             "is_exposed": lambda e: is_exposed(e, exposed_entities),
         }
+        variables = {**arguments, **template_context}
         return function["value_template"].async_render(
-            arguments,
-            parse_result=function.get("parse_result", False),
-            variables=template_context,
+            variables,
+            parse_result=function.get("parse_result", False)
         )
 
 
