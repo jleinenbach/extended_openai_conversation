@@ -453,6 +453,9 @@ class ScriptFunctionExecutor(FunctionExecutor):
         user_input: conversation.ConversationInput,
         exposed_entities,
     ):
+        script_context = {
+            "is_exposed": lambda e: is_exposed(e, exposed_entities),
+        }
         script = Script(
             hass,
             function["sequence"],
@@ -463,7 +466,7 @@ class ScriptFunctionExecutor(FunctionExecutor):
         )
 
         result = await script.async_run(
-            run_variables=arguments, context=user_input.context
+            run_variables={**arguments, **script_context}, context=user_input.context
         )
         return result.variables.get("_function_result", "Success")
 
@@ -488,9 +491,13 @@ class TemplateFunctionExecutor(FunctionExecutor):
         user_input: conversation.ConversationInput,
         exposed_entities,
     ):
+        template_context = {
+            "is_exposed": lambda e: is_exposed(e, exposed_entities),
+        }
         return function["value_template"].async_render(
             arguments,
             parse_result=function.get("parse_result", False),
+            variables=template_context,
         )
 
 
