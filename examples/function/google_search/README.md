@@ -25,7 +25,7 @@ Needs Google API key and CX code.
           type: string
           description: Controls URL output in the response. 'full' for full URLs, 'short' for domain only, 'none' for no URLs. Default is 'none'.
       required:
-        - query
+      - query
   function:
     type: rest
     resource_template: "https://www.googleapis.com/customsearch/v1?key=[API-KEY]&cx=[CX-CODE]&q={{ query | urlencode }}&num={{ results_count | default(3) }}"
