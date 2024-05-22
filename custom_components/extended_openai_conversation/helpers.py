@@ -141,7 +141,7 @@ async def validate_authentication(
 ) -> None:
     """
     Validate the authentication with OpenAI or Azure.
-    
+
     Parameters:
     hass (HomeAssistant): The Home Assistant instance.
     api_key (str): The API key for OpenAI or Azure.
@@ -149,7 +149,7 @@ async def validate_authentication(
     api_version (str): The API version to use.
     organization (str): The organization ID for the API (optional).
     skip_authentication (bool): If True, skip the authentication check.
-    
+
     Returns:
     None
     """
@@ -170,7 +170,6 @@ async def validate_authentication(
             api_key=api_key, base_url=base_url, organization=organization
         )
 
-    
     # Define an asynchronous function that lists models with a timeout using asyncio.to_thread
     async def list_models_with_timeout():
         # Use asyncio.to_thread to run the blocking call in a separate thread
@@ -184,7 +183,7 @@ class FunctionExecutor(ABC):
     def __init__(self, data_schema=vol.Schema({})) -> None:
         """initialize function executor"""
         self.data_schema = data_schema.extend({vol.Required("type"): str})
-    
+
     def to_arguments(self, arguments):
         """to_arguments function"""
         try:
@@ -195,7 +194,7 @@ class FunctionExecutor(ABC):
                 None,
             )
             raise InvalidFunction(function_type) from e
-    
+
     def validate_entity_ids(self, hass: HomeAssistant, entity_ids, exposed_entities):
         if any(hass.states.get(entity_id) is None for entity_id in entity_ids):
             raise EntityNotFound(entity_ids)
@@ -424,7 +423,7 @@ class NativeFunctionExecutor(FunctionExecutor):
             arguments.get("units"),
             arguments.get("types", {"change"}),
         )
-    
+
     def as_utc(self, value: str, default_value, parse_error_message: str):
         if value is None:
             return default_value
